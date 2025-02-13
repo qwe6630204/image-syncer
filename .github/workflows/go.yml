@@ -27,7 +27,7 @@ jobs:
           ${{ runner.os }}-go-
 
     - name: Install Dependencies
-      run: go mod tidy  # 确保依赖完整
+      run: go mod tidy  
 
     - name: Build
       run: go build -v -o image-syncer.exe   # 生成 Windows 可执行文件
@@ -35,8 +35,8 @@ jobs:
     - name: Verify Executable
       run: .\image-syncer.exe --help  # 测试是否成功编译
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+
+    - name: Upload to GitHub Releases
+      uses: softprops/action-gh-release@v2
       with:
-        name: windows-build
-        path: image-syncer.exe  # 上传可执行文件
+        files: image-syncer.exe  # 上传的文件
