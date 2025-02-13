@@ -30,7 +30,7 @@ jobs:
       run: go mod tidy  # 确保依赖完整
 
     - name: Build
-      run: go build -v -o image-syncer.exe ./...  # 生成 Windows 可执行文件
+      run: go build -v -o image-syncer.exe   # 生成 Windows 可执行文件
 
     - name: Verify Executable
       run: .\image-syncer.exe --help  # 测试是否成功编译
