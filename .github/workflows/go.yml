@@ -1,23 +1,35 @@
-name: release
+name: Go Build and Release (Windows)
 
 on:
-  release:
-    types: [created]
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
-  releases-linux-binaries:
-    name: Release Go Binaries
+  build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        goos: [linux, darwin , windows]
-        goarch: [amd64, arm64]
     steps:
-      - uses: actions/checkout@v2
-      - uses: wangyoucao577/go-release-action@v1.51
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          goos: ${{ matrix.goos }}
-          goarch: ${{ matrix.goarch }}
-          goversion: 1.24.0
-          extra_files: LICENSE README.md
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24.0'
+
+    - name: Install Dependencies
+      run: go mod tidy
+
+    - name: Build
+      run: go build -v -o image-syncer.exe
+
+    - name: Verify Executable
+      run: .\image-syncer.exe --help  # 确保编译成功
+
+    - name: Upload to GitHub Releases
+      uses: softprops/action-gh-release@v2
+      with:
+        files: image-syncer.exe  # 上传的文件
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 访问 GitHub API
