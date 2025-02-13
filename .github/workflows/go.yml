@@ -7,9 +7,8 @@ on:
     branches: [ "master" ]
 
 jobs:
-
   build:
-    runs-on: windows-latest  # 切换到 Windows
+    runs-on: windows-latest
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -19,8 +18,22 @@ jobs:
       with:
         go-version: '1.24.0'
 
+    - name: Cache Go Modules
+      uses: actions/cache@v3
+      with:
+        path: C:\Users\runneradmin\go\pkg\mod  # Windows Go module 目录
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install Dependencies
+      run: go mod tidy  # 确保依赖完整
+
     - name: Build
       run: go build -v -o image-syncer.exe ./...  # 生成 Windows 可执行文件
+
+    - name: Verify Executable
+      run: .\image-syncer.exe --help  # 测试是否成功编译
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
