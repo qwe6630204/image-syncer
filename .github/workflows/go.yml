@@ -1,10 +1,8 @@
-name: Go Build and Release (Windows)
+name: Auto Release (Windows)
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches: [ "master" ]  # 仅在 master 分支提交时触发
 
 jobs:
   build:
@@ -12,6 +10,8 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 获取完整的 commit 历史，以便计算 tag
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -22,14 +22,37 @@ jobs:
       run: go mod tidy
 
     - name: Build
-      run: go build -v -o image-syncer.exe
+      run: go build -v -o image-syncer.exe ./...
 
-    - name: Verify Executable
-      run: .\image-syncer.exe --help  # 确保编译成功
+    - name: Get Latest Tag
+      id: get_tag
+      run: |
+        git fetch --tags
+        latest_tag=$(git tag --sort=-v:refname | head -n 1)
+        if [[ -z "$latest_tag" ]]; then
+          latest_tag="v1.0.0"
+        else
+          latest_tag=$(echo $latest_tag | awk -F. '{print $1"."$2"."$3+1}')  # 递增 patch 版本
+        fi
+        echo "NEW_TAG=$latest_tag" >> $GITHUB_ENV
+        echo "New tag will be: $latest_tag"
 
-    - name: Upload to GitHub Releases
+    - name: Create and Push New Tag
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git tag $NEW_TAG
+        git push origin $NEW_TAG
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: image-syncer.exe  # 上传的文件
+        tag_name: ${{ env.NEW_TAG }}
+        name: Release ${{ env.NEW_TAG }}
+        draft: false
+        prerelease: false
+        files: image-syncer.exe
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 访问 GitHub API
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
