@@ -23,7 +23,7 @@ jobs:
         run: go mod tidy  # 确保所有依赖完整
 
       - name: Build
-        run: go build -v -o image-syncer.exe ./...  # 生成 Windows 可执行文件
+        run: go build -v -o image-syncer.exe  # 生成 Windows 可执行文件
 
       - name: Create or Update Tag (latest)
         run: |
